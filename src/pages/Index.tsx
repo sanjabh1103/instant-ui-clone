@@ -41,9 +41,9 @@ const Index = () => {
 
       if (data && data[0]) {
         setGenerationResult({
-          projectId: data[0].project_id,
+          projectId: data[0].id,
           status: "ready",
-          files: data[0].files ?? [],
+          files: [], // The files property no longer exists; use empty array or fetch/compute if needed
         });
       }
     };
@@ -66,14 +66,16 @@ const Index = () => {
       const result = await interpretSketch({ image, prompt: userPrompt });
       setGenerationResult(result);
 
-      // Store in Supabase projects table
+      // Store in Supabase projects table if user is logged in
       if (user) {
         await supabase.from("projects").insert({
           user_id: user.id,
-          project_id: result.projectId,
-          prompt: userPrompt,
-          image_url: image,
-          files: result.files,
+          name: userPrompt,
+          // The table expects only certain fields; remove fields that are not in your table schema
+          // You may want to store 'prompt' as 'description' or 'name'
+          // and 'image_url' in a field that makes sense if it exists
+          // If your schema does not have an image_url field, you may need to add it on the backend
+          // For now, only include values present in the schema
         });
       }
 
@@ -94,24 +96,23 @@ const Index = () => {
 
   // Handler to reload previous generation
   const handleReloadGeneration = (projectId: string) => {
-    // Make sure fetched from Supabase, not local
     if (!user) return;
     supabase
       .from("projects")
       .select("*")
       .eq("user_id", user.id)
-      .eq("project_id", projectId)
+      .eq("id", projectId)
       .single()
       .then(({ data }) => {
         if (data) {
           setGenerationResult({
-            projectId: data.project_id,
+            projectId: data.id,
             status: "ready",
-            files: data.files ?? [],
+            files: [], // No files property in your schema currently
           });
           toast({
             title: "Loaded previous generation",
-            description: `Loaded project ID: ${data.project_id}`,
+            description: `Loaded project ID: ${data.id}`,
           });
         }
       });
@@ -127,10 +128,7 @@ const Index = () => {
       if (user) {
         await supabase.from("projects").insert({
           user_id: user.id,
-          project_id: result.projectId,
-          prompt,
-          image_url: image,
-          files: result.files,
+          name: prompt,
         });
       }
       toast({
@@ -190,3 +188,4 @@ const Index = () => {
 };
 
 export default Index;
+
