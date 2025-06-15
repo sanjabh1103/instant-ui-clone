@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import SketchUploader from "@/components/SketchUploader";
@@ -11,11 +10,41 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
+// Helper function to convert data URL to File object
+const dataURLtoFile = (dataurl: string, filename: string) => {
+  const arr = dataurl.split(',');
+  const mimeMatch = arr[0].match(/:(.*?);/);
+  if (!mimeMatch) {
+    // Fallback for images that might not have the mime type prefix, e.g. from clipboard
+    try {
+        const bstr = atob(arr[0]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new File([u8arr], filename, { type: 'image/png' });
+    } catch (e) {
+        throw new Error('Invalid base64 string for image');
+    }
+  }
+  const mime = mimeMatch[1];
+  const bstr = atob(arr[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n);
+  }
+  return new File([u8arr], filename, { type: mime });
+};
+
+
 const Index = () => {
   const [image, setImage] = useState<string>("");
   const [prompt, setPrompt] = useState<string>("");
   const [generating, setGenerating] = useState(false);
   const [generationResult, setGenerationResult] = useState<null | { projectId: string; status: string; files: string[] }>(null);
+  const [pastGenerations, setPastGenerations] = useState<any[]>([]);
 
   const { user, loading } = useAuth();
   const nav = useNavigate();
@@ -27,24 +56,32 @@ const Index = () => {
     }
   }, [user, loading, nav]);
 
-  // Loads last generation from localStorage on mount (if any)
+  // Loads past generations from Supabase on mount
   useEffect(() => {
     if (!user) return;
-    // Fetch user's recent generations from Supabase
     const fetchProjects = async () => {
       const { data, error } = await supabase
         .from("projects")
         .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
-        .limit(1);
+        .limit(5);
 
-      if (data && data[0]) {
-        setGenerationResult({
-          projectId: data[0].id,
-          status: "ready",
-          files: [], // The files property no longer exists; use empty array or fetch/compute if needed
-        });
+      if (error) {
+        console.error("Failed to fetch past generations", error);
+        return;
+      }
+      
+      if (data) {
+        setPastGenerations(data);
+        if (data[0] && data[0].project_id) {
+          setGenerationResult({
+            projectId: data[0].project_id,
+            status: "ready",
+            files: data[0].files || [],
+          });
+          setPrompt(data[0].prompt || '');
+        }
       }
     };
     fetchProjects();
@@ -59,35 +96,58 @@ const Index = () => {
       });
       return;
     }
+    if (!user) {
+      toast({ title: "Please log in", description: "You must be logged in to generate an app." });
+      return;
+    }
     setPrompt(userPrompt);
     setGenerating(true);
     setGenerationResult(null);
     try {
+      // 1. Upload image to Supabase Storage
+      const file = dataURLtoFile(image, 'sketch.png');
+      const filePath = `${user.id}/${Date.now()}_sketch.png`;
+      const { error: uploadError } = await supabase.storage
+        .from('project-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw new Error(`Image upload failed: ${uploadError.message}`);
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('project-images')
+        .getPublicUrl(filePath);
+
+      // 2. Call interpreter function
       const result = await interpretSketch({ image, prompt: userPrompt });
+
+      // 3. Store in Supabase projects table
+      const { data: newProject, error: insertError } = await supabase.from("projects").insert({
+        user_id: user.id,
+        name: userPrompt.substring(0, 50),
+        prompt: userPrompt,
+        project_id: result.projectId,
+        image_url: publicUrl,
+        // The 'files' column is not in the table, so we don't save it.
+        // files: result.files,
+      }).select();
+
+      if (insertError) throw new Error(`Failed to save project: ${insertError.message}`);
+
       setGenerationResult(result);
 
-      // Store in Supabase projects table if user is logged in
-      if (user) {
-        await supabase.from("projects").insert({
-          user_id: user.id,
-          name: userPrompt,
-          // The table expects only certain fields; remove fields that are not in your table schema
-          // You may want to store 'prompt' as 'description' or 'name'
-          // and 'image_url' in a field that makes sense if it exists
-          // If your schema does not have an image_url field, you may need to add it on the backend
-          // For now, only include values present in the schema
-        });
+      if(newProject) {
+        setPastGenerations(prev => [newProject[0], ...prev].slice(0, 5));
       }
 
       toast({
         title: "App generated!",
         description: "Check your preview below, or edit/deploy.",
       });
-    } catch (e) {
+    } catch (e: any) {
       setGenerationResult(null);
       toast({
         title: "Error generating app",
-        description: String(e),
+        description: e.message || String(e),
         variant: "destructive",
       });
     }
@@ -97,53 +157,50 @@ const Index = () => {
   // Handler to reload previous generation
   const handleReloadGeneration = (projectId: string) => {
     if (!user) return;
+    
+    const project = pastGenerations.find(p => p.project_id === projectId);
+
+    if (project) {
+        setGenerationResult({
+          projectId: project.project_id,
+          status: "ready",
+          files: project.files || [],
+        });
+        setPrompt(project.prompt);
+        toast({
+          title: "Loaded previous generation",
+          description: `Loaded project ID: ${project.project_id}`,
+        });
+        return;
+    }
+
+    // Fallback if not in local state
     supabase
       .from("projects")
       .select("*")
       .eq("user_id", user.id)
-      .eq("id", projectId)
+      .eq("project_id", projectId)
       .single()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
         if (data) {
           setGenerationResult({
-            projectId: data.id,
+            projectId: data.project_id,
             status: "ready",
-            files: [], // No files property in your schema currently
+            files: data.files || [],
           });
+          setPrompt(data.prompt);
           toast({
             title: "Loaded previous generation",
-            description: `Loaded project ID: ${data.id}`,
+            description: `Loaded project ID: ${data.project_id}`,
           });
+        } else if (error) {
+            toast({
+              title: "Error loading project",
+              description: error.message,
+              variant: "destructive",
+            });
         }
       });
-  };
-
-  // Handler to re-run a previous prompt/sketch combo
-  const handleRerun = async (image: string, prompt: string) => {
-    setGenerating(true);
-    setGenerationResult(null);
-    try {
-      const result = await interpretSketch({ image, prompt });
-      setGenerationResult(result);
-      if (user) {
-        await supabase.from("projects").insert({
-          user_id: user.id,
-          name: prompt,
-        });
-      }
-      toast({
-        title: "App regenerated!",
-        description: "A new version of the app was generated.",
-      });
-    } catch (e) {
-      setGenerationResult(null);
-      toast({
-        title: "Error re-generating app",
-        description: String(e),
-        variant: "destructive",
-      });
-    }
-    setGenerating(false);
   };
 
   if (loading) {
@@ -168,8 +225,8 @@ const Index = () => {
         </section>
         <GeneratedPreview generation={generationResult} prompt={prompt} loading={generating} />
         <PastGenerations
+          generations={pastGenerations}
           onReload={handleReloadGeneration}
-          onRerun={handleRerun}
         />
         <section className="mt-12 text-center max-w-2xl mx-auto p-6">
           <h2 className="font-bold text-lg mb-2 text-gray-800">How it works</h2>
@@ -188,4 +245,3 @@ const Index = () => {
 };
 
 export default Index;
-

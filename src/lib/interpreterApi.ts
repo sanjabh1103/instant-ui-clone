@@ -1,3 +1,4 @@
+
 /**
  * Calls the interpret-sketch edge function to interpret a sketch and prompt.
  */
@@ -14,21 +15,7 @@ export async function interpretSketch({ image, prompt }: { image:string; prompt:
       throw new Error(error.message);
     }
     
-    const resultObj = data;
-
-    // Save to localStorage to keep PastGenerations working
-    const pastKey = "r2c-past-generations";
-    const prev = JSON.parse(localStorage.getItem(pastKey) || "[]");
-    const entry = {
-      image,
-      prompt,
-      date: new Date().toISOString(),
-      status: resultObj.status,
-      projectId: resultObj.projectId,
-    };
-    const newArr = [entry, ...prev].slice(0, 5);
-    localStorage.setItem(pastKey, JSON.stringify(newArr));
-    return resultObj;
+    return data;
 
   } catch (err) {
     console.error("Error invoking edge function:", err);
@@ -39,18 +26,6 @@ export async function interpretSketch({ image, prompt }: { image:string; prompt:
       status: "ready",
       files: ["pages/index.tsx", "components/TodoList.tsx"],
     };
-    // Save to localStorage
-    const pastKey = "r2c-past-generations";
-    const prev = JSON.parse(localStorage.getItem(pastKey) || "[]");
-    const entry = {
-      image,
-      prompt,
-      date: new Date().toISOString(),
-      status: result.status,
-      projectId,
-    };
-    const newArr = [entry, ...prev].slice(0, 5);
-    localStorage.setItem(pastKey, JSON.stringify(newArr));
     return result;
   }
 }
