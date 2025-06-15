@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import SketchUploader from "@/components/SketchUploader";
 import PromptPanel from "@/components/PromptPanel";
@@ -7,6 +7,9 @@ import PastGenerations from "@/components/PastGenerations";
 import { interpretSketch } from "@/lib/interpreterApi";
 import { toast } from "@/hooks/use-toast";
 import GeneratedPreview from "@/components/GeneratedPreview";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
   const [image, setImage] = useState<string>("");
@@ -14,19 +17,38 @@ const Index = () => {
   const [generating, setGenerating] = useState(false);
   const [generationResult, setGenerationResult] = useState<null | { projectId: string; status: string; files: string[] }>(null);
 
+  const { user, loading } = useAuth();
+  const nav = useNavigate();
+
+  // Enforce auth
+  useEffect(() => {
+    if (!loading && !user) {
+      nav("/auth");
+    }
+  }, [user, loading, nav]);
+
   // Loads last generation from localStorage on mount (if any)
-  useState(() => {
-    try {
-      const arr = JSON.parse(localStorage.getItem("r2c-past-generations") || "[]");
-      if (arr[0]?.projectId) {
+  useEffect(() => {
+    if (!user) return;
+    // Fetch user's recent generations from Supabase
+    const fetchProjects = async () => {
+      const { data, error } = await supabase
+        .from("projects")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (data && data[0]) {
         setGenerationResult({
-          projectId: arr[0].projectId,
-          status: arr[0].status,
-          files: [], // We can't recall files from store, but will display projectId/status for link
+          projectId: data[0].project_id,
+          status: "ready",
+          files: data[0].files ?? [],
         });
       }
-    } catch {}
-  });
+    };
+    fetchProjects();
+  }, [user]);
 
   // Handles the main generate process
   const handleGenerate = async (userPrompt: string) => {
@@ -43,6 +65,18 @@ const Index = () => {
     try {
       const result = await interpretSketch({ image, prompt: userPrompt });
       setGenerationResult(result);
+
+      // Store in Supabase projects table
+      if (user) {
+        await supabase.from("projects").insert({
+          user_id: user.id,
+          project_id: result.projectId,
+          prompt: userPrompt,
+          image_url: image,
+          files: result.files,
+        });
+      }
+
       toast({
         title: "App generated!",
         description: "Check your preview below, or edit/deploy.",
@@ -60,13 +94,27 @@ const Index = () => {
 
   // Handler to reload previous generation
   const handleReloadGeneration = (projectId: string) => {
-    setGenerationResult((prev) =>
-      prev && prev.projectId === projectId ? prev : { projectId, status: "ready", files: [] }
-    );
-    toast({
-      title: "Loaded previous generation",
-      description: `Loaded project ID: ${projectId}`,
-    });
+    // Make sure fetched from Supabase, not local
+    if (!user) return;
+    supabase
+      .from("projects")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("project_id", projectId)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setGenerationResult({
+            projectId: data.project_id,
+            status: "ready",
+            files: data.files ?? [],
+          });
+          toast({
+            title: "Loaded previous generation",
+            description: `Loaded project ID: ${data.project_id}`,
+          });
+        }
+      });
   };
 
   // Handler to re-run a previous prompt/sketch combo
@@ -76,6 +124,15 @@ const Index = () => {
     try {
       const result = await interpretSketch({ image, prompt });
       setGenerationResult(result);
+      if (user) {
+        await supabase.from("projects").insert({
+          user_id: user.id,
+          project_id: result.projectId,
+          prompt,
+          image_url: image,
+          files: result.files,
+        });
+      }
       toast({
         title: "App regenerated!",
         description: "A new version of the app was generated.",
@@ -90,6 +147,14 @@ const Index = () => {
     }
     setGenerating(false);
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[80vh]">
+        <span className="text-xl text-muted-foreground">Loading...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-indigo-50 via-white to-indigo-100">
