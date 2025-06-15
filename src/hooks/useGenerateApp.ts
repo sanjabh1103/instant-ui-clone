@@ -7,9 +7,6 @@ import { dataURLtoFile } from "@/utils/imageUtils";
 import { useAuth } from "@/hooks/useAuth";
 import type { ProjectRow } from "./usePastGenerationsFetcher";
 
-/**
- * Handles the generation of app from sketch and prompt (upload, API, DB insert).
- */
 export function useGenerateApp(
   image: string,
   setPrompt: (v: string) => void,
@@ -35,6 +32,13 @@ export function useGenerateApp(
     setGenerating(true);
     setGenerationResult(null);
     try {
+      // Defensive: user_id required everywhere!
+      if (!user.id) {
+        throw new Error(
+          "Could not determine your user ID. Please log out and back in again."
+        );
+      }
+
       // 1. Upload image to Supabase Storage
       const file = dataURLtoFile(image, 'sketch.png');
       const filePath = `${user.id}/${Date.now()}_sketch.png`;
@@ -50,6 +54,12 @@ export function useGenerateApp(
 
       // 2. Call interpreter function
       const result = await interpretSketch({ image, prompt: userPrompt });
+      // Defensive: Validate AI output
+      if (!result || !result.projectId || !Array.isArray(result.files)) {
+        throw new Error(
+          "Failed to interpret your sketch and prompt. The AI returned malformed data. Please try again or clarify your prompt."
+        );
+      }
 
       // 3. Store in Supabase projects table
       // Ensure user_id is always set for RLS!

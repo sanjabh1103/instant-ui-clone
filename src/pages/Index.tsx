@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import SketchUploader from "@/components/SketchUploader";
 import PromptPanel from "@/components/PromptPanel";
@@ -18,7 +18,35 @@ const Index = () => {
   const [prompt, setPrompt] = useState<string>("");
   const [generationResult, setGenerationResult] = useState<null | { projectId: string; status: string; files: string[] }>(null);
   const [pastGenerations, setPastGenerations] = useState<ProjectRow[]>([]);
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, session } = useAuth();
+
+  // Error boundary state
+  const [fatalError, setFatalError] = useState<string | null>(null);
+
+  // Session expiry & re-auth
+  useEffect(() => {
+    // watch for session expiry
+    if (!authLoading && !session) {
+      setFatalError("Session expired. Please log in again.");
+      setTimeout(() => {
+        window.location.href = "/auth";
+      }, 1250);
+    }
+  }, [session, authLoading]);
+
+  // Enhanced API error boundary
+  useEffect(() => {
+    window.addEventListener("unhandledrejection", (e) => {
+      setFatalError(e?.reason?.message || "Unexpected error.");
+    });
+    window.addEventListener("error", (e) => {
+      setFatalError(e?.message || "Unexpected error.");
+    });
+    return () => {
+      window.removeEventListener("unhandledrejection", () => {});
+      window.removeEventListener("error", () => {});
+    };
+  }, []);
 
   // Fetch previous projects on mount/refresh, auto-load latest as preview
   const fetchedGenerations = usePastGenerationsFetcher(setGenerationResult, setPrompt);
@@ -58,6 +86,24 @@ const Index = () => {
       return;
     }
   };
+
+  if (fatalError) {
+    return (
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-indigo-100">
+        <Header />
+        <div className="bg-white border px-6 py-10 rounded-xl shadow text-center">
+          <div className="text-2xl font-bold text-red-600 mb-4">Something went wrong</div>
+          <div className="text-gray-800">{fatalError}</div>
+          <button
+            className="mt-6 px-6 py-2 rounded bg-indigo-700 text-white font-bold shadow"
+            onClick={() => window.location.reload()}
+          >
+            Reload
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-indigo-50 via-white to-indigo-100">

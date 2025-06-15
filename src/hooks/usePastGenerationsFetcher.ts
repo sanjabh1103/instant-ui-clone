@@ -25,7 +25,10 @@ export function usePastGenerationsFetcher(
   const [pastGenerations, setPastGenerations] = useState<ProjectRow[]>([]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setPastGenerations([]);
+      return;
+    }
     const fetchProjects = async () => {
       const { data, error } = await supabase
         .from("projects")
@@ -35,7 +38,8 @@ export function usePastGenerationsFetcher(
         .limit(5);
 
       if (error) {
-        console.error("Failed to fetch past generations", error);
+        setPastGenerations([]);
+        setGenerationResult(null);
         return;
       }
 

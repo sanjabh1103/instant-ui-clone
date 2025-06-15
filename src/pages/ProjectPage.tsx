@@ -4,30 +4,47 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/Header";
-import { Loader2 } from "lucide-react";
+import { Loader2, XCircle } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 const ProjectPage = () => {
   const { projectId } = useParams<{ projectId: string }>();
-  const { user, loading } = useAuth();
+  const { user, loading, session } = useAuth();
   const nav = useNavigate();
   const [project, setProject] = useState<any>(null);
   const [fetching, setFetching] = useState(true);
+  const [fatalError, setFatalError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!loading && !user) nav("/auth");
-  }, [user, loading, nav]);
+    if (!loading && !session) {
+      setFatalError("Session expired or authentication lost. Please log in again.");
+      setTimeout(() => {
+        nav("/auth");
+      }, 1200);
+    }
+  }, [loading, session, nav]);
 
   useEffect(() => {
     const fetchProject = async () => {
       if (!user || !projectId) return;
       setFetching(true);
-      const { data, error } = await supabase
-        .from("projects")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("project_id", projectId)
-        .single();
-      setProject(data);
+      try {
+        const { data, error } = await supabase
+          .from("projects")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("project_id", projectId)
+          .single();
+        if (error) {
+          throw error;
+        }
+        setProject(data);
+      } catch (err: any) {
+        setFatalError(
+          err?.message ||
+            "There was a problem loading your project. Please try again or contact support."
+        );
+      }
       setFetching(false);
     };
     fetchProject();
@@ -38,6 +55,22 @@ const ProjectPage = () => {
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="animate-spin w-10 h-10 text-indigo-700" />
         <span className="ml-2">Loading project...</span>
+      </div>
+    );
+  }
+  if (fatalError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <Header />
+        <XCircle className="w-10 h-10 text-red-500 mb-3" />
+        <h1 className="text-2xl font-bold mb-3">Error</h1>
+        <p className="text-muted-foreground">{fatalError}</p>
+        <button
+          className="mt-6 px-6 py-2 rounded bg-indigo-700 text-white font-bold shadow"
+          onClick={() => window.location.reload()}
+        >
+          Reload
+        </button>
       </div>
     );
   }
