@@ -52,6 +52,7 @@ export function useGenerateApp(
       const result = await interpretSketch({ image, prompt: userPrompt });
 
       // 3. Store in Supabase projects table
+      // Ensure user_id is always set for RLS!
       const { data: newProject, error: insertError } = await supabase.from("projects").insert({
         user_id: user.id,
         name: userPrompt.substring(0, 50),
