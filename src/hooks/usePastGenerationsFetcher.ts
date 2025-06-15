@@ -99,7 +99,7 @@ export function usePastGenerationsFetcher(
     toast({
       title: "Deleted!",
       description: "Project has been deleted.",
-      variant: "success",
+      variant: "default", // fixed type to default since only "default" and "destructive" are allowed.
     });
     await refreshPastGenerations();
     return true;
