@@ -1,17 +1,19 @@
+
 import { ArrowUp } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
+// import { useAuth } from "@/hooks/useAuth";
+// import { useNavigate } from "react-router-dom";
 import { LogOut } from "lucide-react";
 
 const Header = () => {
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
+  // const { user, signOut } = useAuth();
+  // const navigate = useNavigate();
 
-  const handleLogout = async () => {
-    await signOut();
-    navigate("/auth");
-  };
+  // No logout logic for demo/review
+  // const handleLogout = async () => {
+  //   await signOut();
+  //   navigate("/auth");
+  // };
 
   return (
     <header className="w-full flex items-center justify-between bg-background/80 sticky top-0 z-20 h-16 border-b border-border px-8 py-2">
@@ -26,28 +28,17 @@ const Header = () => {
       <nav className="flex items-center space-x-6 text-sm">
         <a href="/docs" className="hover:text-indigo-700 transition-colors">Docs</a>
         <a href="/community" className="hover:text-indigo-700 transition-colors">Community</a>
-        {user ? (
-          <div className="flex items-center gap-4">
-            <span className="font-medium text-indigo-900">{user.email}</span>
-            <button
-              onClick={handleLogout}
-              title="Logout"
-              className="px-2 py-1 bg-gray-50 border rounded text-xs hover:bg-gray-100 flex gap-1 items-center"
-            >
-              <LogOut className="w-4 h-4" /> Logout
-            </button>
-          </div>
-        ) : (
-          <a
-            href="/auth"
-            className="font-medium bg-primary text-primary-foreground px-3 py-1 rounded shadow hover:bg-indigo-700 transition-colors flex items-center gap-1"
-          >
-            Login
-          </a>
-        )}
+        {/* Always show Login button for demo */}
+        <a
+          href="/auth"
+          className="font-medium bg-primary text-primary-foreground px-3 py-1 rounded shadow hover:bg-indigo-700 transition-colors flex items-center gap-1"
+        >
+          Login
+        </a>
       </nav>
     </header>
   );
 };
 
 export default Header;
+
