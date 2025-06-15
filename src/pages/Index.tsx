@@ -9,7 +9,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { usePastGenerationsFetcher, ProjectRow } from "@/hooks/usePastGenerationsFetcher";
 import { useGenerateApp } from "@/hooks/useGenerateApp";
 import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import HowItWorksPanel from "@/components/HowItWorksPanel";
+import GuestPastGenerationsNotice from "@/components/GuestPastGenerationsNotice";
 
 /**
  * Main Index Page: Orchestrates app generation, sketch upload, prompt, and preview.
@@ -63,7 +64,7 @@ const Index = () => {
     setPrompt,
     setGenerationResult,
     (cb: (prev: ProjectRow[]) => ProjectRow[]) => refreshPastGenerations(),
-    user // pass real user; if null, will show toast error
+    user
   );
 
   // Reload handler for previous generations (used by PastGenerations)
@@ -123,15 +124,18 @@ const Index = () => {
     <div className="min-h-screen w-full bg-gradient-to-br from-indigo-50 via-white to-indigo-100">
       <Header />
       <main className="flex flex-col items-center py-8 px-2 max-w-6xl mx-auto w-full">
-        <section className="w-full flex flex-col lg:flex-row gap-10 items-center lg:items-start justify-center mt-10">
-          <div className="w-full lg:w-1/2 max-w-lg mb-6 lg:mb-0">
+        <section className="w-full flex flex-col lg:flex-row gap-12 items-center lg:items-start justify-center mt-10">
+          <div className="w-full lg:w-1/2 max-w-[420px] mb-6 lg:mb-0">
             <SketchUploader onImageSelected={setImage} disabled={generating} />
           </div>
-          <div className="w-full lg:w-1/2 max-w-lg">
+          <div className="w-full lg:w-1/2 max-w-[520px]">
+            {/* Hide login box. Only show PromptPanel if logged in */}
             <PromptPanel onSubmit={handleGenerate} disabled={generating || authLoading} loading={generating} />
+            {/* Info only - no login UI here */}
             {!user && !authLoading && (
-              <div className="mt-4 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded p-3 text-sm">
-                <b>Note:</b> To generate an app or view past generations, please <a href="/auth" className="underline text-indigo-700 hover:text-indigo-900">log in</a>.
+              <div className="mt-4 bg-yellow-50 text-yellow-800 border border-yellow-200 rounded p-3 text-sm shadow-inner">
+                <b>To generate an app or view past generations, please</b>
+                <a href="/auth" className="ml-2 underline text-indigo-700 hover:text-indigo-900">log in</a>.
               </div>
             )}
           </div>
@@ -148,31 +152,9 @@ const Index = () => {
             onRename={handleRenameGeneration}
           />
         ) : (
-          <section className="mt-10 mb-4 px-2 w-full max-w-xl mx-auto">
-            <h3 className="font-bold text-md mb-3 text-gray-700">Past Generations</h3>
-            <div className="rounded-lg bg-white border p-5 shadow text-center text-gray-500 text-sm">
-              <span>
-                <b>Login required.</b> Sign in to view your previous generations and reload projects!
-              </span>
-            </div>
-          </section>
+          <GuestPastGenerationsNotice />
         )}
-        <section className="mt-12 text-center max-w-2xl mx-auto p-6">
-          <h2 className="font-bold text-lg mb-2 text-gray-800">How it works</h2>
-          <ol className="list-decimal list-inside text-lg text-gray-600 space-y-1">
-            <li>Upload or capture your UI sketch.</li>
-            <li>Describe its behavior in plain English.</li>
-            <li>
-              Click “Generate” to see magic. 
-              <span className="inline ml-2 text-xs text-yellow-800 bg-yellow-100 px-1 py-0.5 rounded">
-                Login required
-              </span>
-            </li>
-          </ol>
-          <div className="text-xs text-muted-foreground mt-4">
-            (Supabase authentication, Gemini 2.5 Vision/Chat, and deployment coming soon.)
-          </div>
-        </section>
+        <HowItWorksPanel />
       </main>
     </div>
   );

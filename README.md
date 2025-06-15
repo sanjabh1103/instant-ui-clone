@@ -1,73 +1,129 @@
-# Welcome to your Lovable project
 
-## Project info
+# Reality-to-Code AI Builder
 
-**URL**: https://lovable.dev/projects/07c54fb0-687c-48eb-a6c1-4a77409caa77
+## What is this application?
 
-## How can I edit this code?
+Reality-to-Code AI Builder is a modern web application that allows users to:
+- **Upload hand-drawn UI sketches** (image-based wireframes)
+- **Describe the app's desired behavior** in natural language
+- **Generate production-ready app code** using AI vision and code generation
+- **Save, rename, and delete past generations** as projects, each with its prompt, sketch image, and file tree
+- **Securely authenticate** via Supabase (email/password)
+- **Instantly preview generated apps** by clicking on a project
+- All user-generated data is secured by Row Level Security in Supabase
 
-There are several ways of editing your application.
+---
 
-**Use Lovable**
+## User Features, at a Glance
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/07c54fb0-687c-48eb-a6c1-4a77409caa77) and start prompting.
+- **Generate apps from sketches + English**: Just sketch + describe what you want!
+- **Sketch upload**: PNG/JPG up to 5MB per image.
+- **Prompt smarter apps**: Describe the desired features/logic.
+- **Private profile**: Your projects and sketches are accessible only by you.
+- **Rename/Delete Projects**: Use the action menu on each past generation.
+- **Resume Work**: Instantly reload/preview prior generations in the UI.
+- **Error Handling**: If your session expires, you'll be gently guided to log in again.
+- **No login required to browse**: See the workflow—even as a guest.
 
-Changes made via Lovable will be committed automatically to this repo.
+---
 
-**Use your preferred IDE**
+## Developer Guide
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Architecture
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- **Frontend**: React (functional components), TypeScript, Tailwind CSS, Shadcn UI, Lucide Icons
+- **Backend**: Supabase (auth, database, storage)
+    - `projects` table (core user data)
+    - Storage bucket: `project-images`
 
-Follow these steps:
+### Main Supabase Table: `projects`
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+Stores metadata for each user-generated project:
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+| Column       | Type        | Description                       |
+| ------------ | ---------- | --------------------------------- |
+| id           | string     | Primary key                       |
+| project_id   | string     | AI-generated unique project id     |
+| user_id      | string     | Foreign key, Supabase user id      |
+| name         | string     | Name/title for the generation      |
+| prompt       | string     | The prompt describing the app      |
+| files        | string[]   | File names for preview             |
+| image_url    | string     | Public URL for the sketch image    |
+| created_at   | timestamp  | Project creation time              |
+| updated_at   | timestamp  | Last update time                   |
+| description  | string?    | (optional)                         |
+| is_public    | boolean    | For future (currently always false)|
 
-# Step 3: Install the necessary dependencies.
-npm i
+Row Level Security (RLS) is **enabled**: each user can see only their own projects by default!
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+### Supabase Authentication
 
-**Edit a file directly in GitHub**
+- Email/password login and registration (no social logins by default)
+- Make sure "Confirm email" is *disabled* in Supabase settings for easier onboarding/testing
+- Redirects back to "/" upon success
+- Guest users can view only informational UI, not saved projects
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Running & Developing
 
-**Use GitHub Codespaces**
+**Local development:**
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+1. Clone the repo, run `npm install`
+2. Set up your own Supabase project (see below) or use the default
+3. `npm run dev` to start local dev environment (hot reload + live preview)
+4. Visit `http://localhost:5173` in your browser
 
-## What technologies are used for this project?
+**Environment / Critical settings:**
 
-This project is built with:
+- Supabase project id: `kvunnankqgfokeufvsrv`
+- Supabase anon key: (see in Supabase dashboard or ask dev lead)
+- Storage bucket: `project-images`
+- Main table: `projects`
+- If starting from scratch, set up Supabase as described in the migrations: see `/supabase/migrations/` for schema reference (especially for the `projects` table and associated RLS).
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+---
 
-## How can I deploy this project?
+## Extending/Improving
 
-Simply open [Lovable](https://lovable.dev/projects/07c54fb0-687c-48eb-a6c1-4a77409caa77) and click on Share -> Publish.
+- **Add social logins**: update Supabase Auth Providers
+- **Support additional file types** or larger images by editing file validation
+- **Team/collaboration**: add shared project tables and adjust RLS
+- **Use custom edge functions** (see `/supabase/functions/`)
+- **Advanced error telemetry**: add error logging to analytics_events table
 
-## Can I connect a custom domain to my Lovable project?
+## File Structure
 
-Yes, you can!
+All new React components should be atomic and concise—avoid "giant" files. Here are some key files/components and what they do:
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+- `src/pages/Index.tsx` — Main application hub; orchestrates layout & state
+- `src/components/SketchUploader.tsx` — Handles image file selection and preview
+- `src/components/PromptPanel.tsx` — AI prompt UI for describing the app
+- `src/components/PastGenerations.tsx`, `PastGenerationActions.tsx` — List, reload, rename, and delete previous generations
+- `src/components/GeneratedPreview.tsx` — Shows the generated project and link to preview
+- `src/hooks/usePastGenerationsFetcher.ts`, `useGenerateApp.ts` — Core data logic
+- `src/pages/ProjectPage.tsx` — Full project preview per generation
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+---
+
+## Critical Developer Notes
+
+- **Database security:** Row Level Security (RLS) is enforced!
+- **Never expose your Supabase service key in frontend code!** Use anon key only.
+- **Prompt/AI interaction code is in `src/lib/interpreterApi.ts`** and expects compatible backend endpoints.
+- **All auth, file upload, and storage logic is centralized in hooks/components:** Please keep them modular when extending functionality.
+
+---
+
+## License & Credits
+
+- Built with [Lovable](https://lovable.dev/) — React, Vite, Shadcn UI, and Supabase
+- Icons by [Lucide](https://lucide.dev/)
+- For questions, improvements, or deployment help, see project settings or open an issue.
+
+---
+
+### Contact / Contributing
+
+Open PRs, improvements, or feature requests are welcome. Please reference which feature or file you're updating, and ensure all code is **fully typed and modularized**.
+
+---
+
