@@ -9,6 +9,48 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      ai_employees: {
+        Row: {
+          avatar: string
+          cost: number
+          created_at: string
+          id: string
+          name: string
+          status: string
+          success_rate: number
+          tasks_completed: number
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar: string
+          cost?: number
+          created_at?: string
+          id?: string
+          name: string
+          status?: string
+          success_rate?: number
+          tasks_completed?: number
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar?: string
+          cost?: number
+          created_at?: string
+          id?: string
+          name?: string
+          status?: string
+          success_rate?: number
+          tasks_completed?: number
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_modules: {
         Row: {
           category: Database["public"]["Enums"]["module_category"]

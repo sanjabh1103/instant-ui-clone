@@ -1,6 +1,7 @@
 
 import React from "react";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
+import ProjectStructurePanel from "./ProjectStructurePanel";
 
 interface GeneratedPreviewProps {
   generation: null | { projectId: string; status: string; files: string[] };
@@ -35,6 +36,7 @@ const GeneratedPreview: React.FC<GeneratedPreviewProps> = ({ generation, prompt,
         >
           View Preview
         </a>
+        <ProjectStructurePanel files={generation.files || []} />
       </div>
     );
   }

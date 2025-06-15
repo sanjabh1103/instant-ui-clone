@@ -1,5 +1,6 @@
 
 import { ArrowUp } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Header = () => (
   <header className="w-full flex items-center justify-between bg-background/80 sticky top-0 z-20 h-16 border-b border-border px-8 py-2">
@@ -12,8 +13,8 @@ const Header = () => (
       </span>
     </div>
     <nav className="flex items-center space-x-6 text-sm">
-      <a href="#" className="hover:text-indigo-700 transition-colors">Docs</a>
-      <a href="#" className="hover:text-indigo-700 transition-colors">Community</a>
+      <Link to="/docs" className="hover:text-indigo-700 transition-colors">Docs</Link>
+      <Link to="/community" className="hover:text-indigo-700 transition-colors">Community</Link>
       <a href="#" className="font-medium bg-primary text-primary-foreground px-3 py-1 rounded shadow hover:bg-indigo-700 transition-colors flex items-center gap-1">
         Launch App <ArrowUp className="w-4 h-4" />
       </a>
