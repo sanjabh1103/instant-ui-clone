@@ -240,7 +240,11 @@ const Index = () => {
         </section>
         <GeneratedPreview generation={generationResult} prompt={prompt} loading={generating} />
         <PastGenerations
-          generations={pastGenerations}
+          generations={pastGenerations.map(g => ({
+            ...g,
+            // prompt required by PastGen; fallback to "" if missing
+            prompt: g.prompt ?? "",
+          }))}
           onReload={handleReloadGeneration}
         />
         <section className="mt-12 text-center max-w-2xl mx-auto p-6">
