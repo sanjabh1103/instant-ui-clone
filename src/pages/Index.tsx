@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import SketchUploader from "@/components/SketchUploader";
@@ -17,7 +18,15 @@ const Index = () => {
   const [image, setImage] = useState<string>("");
   const [prompt, setPrompt] = useState<string>("");
   const [generationResult, setGenerationResult] = useState<null | { projectId: string; status: string; files: string[] }>(null);
-  const [pastGenerations, setPastGenerations] = useState<ProjectRow[]>([]);
+
+  // Use new pastGenerations management from hook
+  const {
+    pastGenerations,
+    refreshPastGenerations,
+    deleteProject,
+    renameProject,
+  } = usePastGenerationsFetcher(setGenerationResult, setPrompt);
+
   const { user, loading: authLoading, session } = useAuth();
 
   // Error boundary state
@@ -37,10 +46,10 @@ const Index = () => {
   // Enhanced API error boundary
   useEffect(() => {
     window.addEventListener("unhandledrejection", (e) => {
-      setFatalError(e?.reason?.message || "Unexpected error.");
+      setFatalError((e?.reason as Error)?.message || "Unexpected error.");
     });
     window.addEventListener("error", (e) => {
-      setFatalError(e?.message || "Unexpected error.");
+      setFatalError((e as ErrorEvent)?.message || "Unexpected error.");
     });
     return () => {
       window.removeEventListener("unhandledrejection", () => {});
@@ -48,16 +57,12 @@ const Index = () => {
     };
   }, []);
 
-  // Fetch previous projects on mount/refresh, auto-load latest as preview
-  const fetchedGenerations = usePastGenerationsFetcher(setGenerationResult, setPrompt);
-  if (fetchedGenerations !== pastGenerations) setPastGenerations(fetchedGenerations);
-
   // Generate app handler
   const { generating, handleGenerate } = useGenerateApp(
     image,
     setPrompt,
     setGenerationResult,
-    setPastGenerations,
+    (cb: (prev: ProjectRow[]) => ProjectRow[]) => refreshPastGenerations(),
     user // pass real user; if null, will show toast error
   );
 
@@ -83,8 +88,17 @@ const Index = () => {
         title: "Loaded previous generation",
         description: `Loaded project ID: ${project.project_id}`,
       });
-      return;
     }
+  };
+
+  // Delete handler
+  const handleDeleteGeneration = async (projectId: string) => {
+    await deleteProject(projectId);
+  };
+
+  // Rename handler
+  const handleRenameGeneration = async (projectId: string, newName: string) => {
+    await renameProject(projectId, newName);
   };
 
   if (fatalError) {
@@ -130,6 +144,8 @@ const Index = () => {
               prompt: g.prompt ?? "",
             }))}
             onReload={handleReloadGeneration}
+            onDelete={handleDeleteGeneration}
+            onRename={handleRenameGeneration}
           />
         ) : (
           <section className="mt-10 mb-4 px-2 w-full max-w-xl mx-auto">

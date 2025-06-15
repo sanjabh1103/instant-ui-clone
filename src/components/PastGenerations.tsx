@@ -1,25 +1,32 @@
 
 import { ArrowUpRight } from "lucide-react";
+import PastGenerationActions from "./PastGenerationActions";
 
 interface PastGen {
   image_url?: string;
   prompt: string;
   created_at: string;
   project_id?: string;
+  name?: string;
 }
 
-/**
+/** 
  * Props for enhanced UX:
  * - onReload: reload/display a previous generation in the UI preview (projectId)
+ * - onDelete: delete project handler (optional)
+ * - onRename: rename project handler (optional)
  */
 export default function PastGenerations({
   generations,
   onReload,
+  onDelete,
+  onRename,
 }: {
   generations: PastGen[];
   onReload?: (projectId: string) => void;
+  onDelete?: (projectId: string) => void;
+  onRename?: (projectId: string, newName: string) => void;
 }) {
-
   if (!generations || !generations.length) return null;
 
   return (
@@ -39,7 +46,10 @@ export default function PastGenerations({
               />
             )}
             <div className="text-xs text-muted-foreground mb-1">{new Date(g.created_at).toLocaleString()}</div>
-            <div className="text-gray-900 text-sm font-medium line-clamp-2 mb-2">{g.prompt}</div>
+            <div className="text-gray-900 text-sm font-medium line-clamp-2 mb-1">
+              {g.name ?? g.prompt}
+            </div>
+            <div className="text-[11px] text-gray-500 mb-1 line-clamp-1">{g.prompt}</div>
             <div className={`text-xs mt-auto text-green-700`}>
               Ready
             </div>
@@ -64,6 +74,14 @@ export default function PastGenerations({
                     >
                       Reload
                     </button>
+                  )}
+                  {/* Add Actions (Rename/Delete) */}
+                  {(onDelete || onRename) && (
+                    <PastGenerationActions
+                      onDelete={() => onDelete?.(g.project_id!)}
+                      onRename={(name) => onRename?.(g.project_id!, name)}
+                      initialName={g.name ?? g.prompt}
+                    />
                   )}
                 </>
               )}

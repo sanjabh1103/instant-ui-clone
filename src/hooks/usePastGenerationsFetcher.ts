@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
 
 export type ProjectRow = {
   created_at: string;
@@ -56,5 +57,80 @@ export function usePastGenerationsFetcher(
     fetchProjects();
   }, [user, setGenerationResult, setPrompt]);
 
-  return pastGenerations;
+  // NEW: Helper to manually refresh generations after delete/rename
+  const refreshPastGenerations = async () => {
+    if (!user) {
+      setPastGenerations([]);
+      return;
+    }
+    const { data, error } = await supabase
+      .from("projects")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(5);
+
+    if (error) {
+      setPastGenerations([]);
+      toast({
+        title: "Failed to refresh generations",
+        description: error?.message || "Unknown error",
+        variant: "destructive",
+      });
+      return;
+    }
+    setPastGenerations((data || []) as ProjectRow[]);
+  };
+
+  // NEW: Delete action
+  const deleteProject = async (project_id: string) => {
+    const { error } = await supabase
+      .from("projects")
+      .delete()
+      .eq("project_id", project_id);
+    if (error) {
+      toast({
+        title: "Delete failed",
+        description: error?.message || "Could not delete the project.",
+        variant: "destructive",
+      });
+      return false;
+    }
+    toast({
+      title: "Deleted!",
+      description: "Project has been deleted.",
+      variant: "success",
+    });
+    await refreshPastGenerations();
+    return true;
+  };
+
+  // NEW: Rename action
+  const renameProject = async (project_id: string, newName: string) => {
+    const { error } = await supabase
+      .from("projects")
+      .update({ name: newName })
+      .eq("project_id", project_id);
+    if (error) {
+      toast({
+        title: "Rename failed",
+        description: error?.message || "Could not rename the project.",
+        variant: "destructive",
+      });
+      return false;
+    }
+    toast({
+      title: "Renamed",
+      description: "Project has been renamed.",
+    });
+    await refreshPastGenerations();
+    return true;
+  };
+
+  return {
+    pastGenerations,
+    refreshPastGenerations,
+    deleteProject,
+    renameProject,
+  };
 }
