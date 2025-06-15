@@ -38,13 +38,27 @@ const dataURLtoFile = (dataurl: string, filename: string) => {
   return new File([u8arr], filename, { type: mime });
 };
 
+type ProjectRow = {
+  created_at: string;
+  description?: string;
+  id: string;
+  is_public: boolean;
+  name: string;
+  project_id: string;
+  updated_at: string;
+  user_id: string;
+  image_url?: string;
+  // Add these optional fields to support fallback/local project objects only
+  files?: string[];
+  prompt?: string;
+};
 
 const Index = () => {
   const [image, setImage] = useState<string>("");
   const [prompt, setPrompt] = useState<string>("");
   const [generating, setGenerating] = useState(false);
   const [generationResult, setGenerationResult] = useState<null | { projectId: string; status: string; files: string[] }>(null);
-  const [pastGenerations, setPastGenerations] = useState<any[]>([]);
+  const [pastGenerations, setPastGenerations] = useState<ProjectRow[]>([]);
 
   const { user, loading } = useAuth();
   const nav = useNavigate();
@@ -73,14 +87,15 @@ const Index = () => {
       }
       
       if (data) {
-        setPastGenerations(data);
+        setPastGenerations(data as ProjectRow[]);
+        // For DB rows always gracefully handle missing .files and .prompt (not present in DB)
         if (data[0] && data[0].project_id) {
           setGenerationResult({
             projectId: data[0].project_id,
             status: "ready",
-            files: data[0].files || [],
+            files: (data[0] as any).files ?? [], // fallback for local projects
           });
-          setPrompt(data[0].prompt || '');
+          setPrompt((data[0] as any).prompt ?? ''); // fallback for local projects
         }
       }
     };
@@ -127,16 +142,16 @@ const Index = () => {
         prompt: userPrompt,
         project_id: result.projectId,
         image_url: publicUrl,
-        // The 'files' column is not in the table, so we don't save it.
-        // files: result.files,
+        // 'files' not saved in DB
       }).select();
 
       if (insertError) throw new Error(`Failed to save project: ${insertError.message}`);
 
       setGenerationResult(result);
 
-      if(newProject) {
-        setPastGenerations(prev => [newProject[0], ...prev].slice(0, 5));
+      if (newProject) {
+        // Cast to ProjectRow and add .files/.prompt only as fallback to local result
+        setPastGenerations(prev => [newProject[0] as ProjectRow, ...prev].slice(0, 5));
       }
 
       toast({
@@ -164,9 +179,9 @@ const Index = () => {
         setGenerationResult({
           projectId: project.project_id,
           status: "ready",
-          files: project.files || [],
+          files: project.files ?? [],
         });
-        setPrompt(project.prompt);
+        setPrompt(project.prompt ?? '');
         toast({
           title: "Loaded previous generation",
           description: `Loaded project ID: ${project.project_id}`,
@@ -180,15 +195,15 @@ const Index = () => {
       .select("*")
       .eq("user_id", user.id)
       .eq("project_id", projectId)
-      .single()
+      .maybeSingle()
       .then(({ data, error }) => {
         if (data) {
           setGenerationResult({
             projectId: data.project_id,
             status: "ready",
-            files: data.files || [],
+            files: (data as any).files ?? [],
           });
-          setPrompt(data.prompt);
+          setPrompt((data as any).prompt ?? '');
           toast({
             title: "Loaded previous generation",
             description: `Loaded project ID: ${data.project_id}`,
