@@ -103,16 +103,16 @@ const Index = () => {
 
   if (fatalError) {
     return (
-      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-indigo-100">
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-gradient-to-br from-red-50 via-white to-red-100">
         <Header />
-        <div className="bg-white border px-6 py-10 rounded-xl shadow text-center">
-          <div className="text-2xl font-bold text-red-600 mb-4">Something went wrong</div>
-          <div className="text-gray-800">{fatalError}</div>
+        <div className="bg-white border border-red-200 px-8 py-12 rounded-2xl shadow-xl text-center max-w-md">
+          <div className="text-3xl font-bold text-red-600 mb-4">Oops! Something went wrong</div>
+          <div className="text-gray-800 mb-6">{fatalError}</div>
           <button
-            className="mt-6 px-6 py-2 rounded bg-indigo-700 text-white font-bold shadow"
+            className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all"
             onClick={() => window.location.reload()}
           >
-            Reload
+            Reload Page
           </button>
         </div>
       </div>
@@ -120,14 +120,41 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-indigo-50 via-white to-indigo-100">
+    <div className="min-h-screen w-full bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       <Header />
-      <main className="flex flex-col items-center py-8 px-2 max-w-6xl mx-auto w-full">
-        <section className="w-full flex flex-col lg:flex-row gap-12 items-center lg:items-start justify-center mt-10">
-          <div className="w-full lg:w-1/2 max-w-[420px] mb-6 lg:mb-0">
+      <main className="flex flex-col items-center py-12 px-4 w-full">
+        {/* Hero Section */}
+        <section className="text-center mb-16 max-w-4xl mx-auto">
+          <h1 className="text-5xl lg:text-6xl font-black text-gray-900 mb-6 tracking-tight">
+            Turn Your
+            <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-transparent bg-clip-text"> Sketches </span>
+            Into Code
+          </h1>
+          <p className="text-xl lg:text-2xl text-gray-600 mb-8 leading-relaxed">
+            Upload a hand-drawn wireframe, describe your vision, and watch AI generate production-ready web applications in minutes.
+          </p>
+          <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-500">
+            <div className="flex items-center gap-2 bg-white rounded-full px-4 py-2 shadow-sm">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              React & TypeScript
+            </div>
+            <div className="flex items-center gap-2 bg-white rounded-full px-4 py-2 shadow-sm">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              Tailwind CSS
+            </div>
+            <div className="flex items-center gap-2 bg-white rounded-full px-4 py-2 shadow-sm">
+              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+              AI-Powered
+            </div>
+          </div>
+        </section>
+
+        {/* Main Creation Flow */}
+        <section className="w-full flex flex-col lg:flex-row gap-12 items-start justify-center mb-16 max-w-6xl mx-auto">
+          <div className="w-full lg:w-1/2 max-w-lg">
             <SketchUploader onImageSelected={setImage} disabled={generating} />
           </div>
-          <div className="w-full lg:w-1/2 max-w-[520px]">
+          <div className="w-full lg:w-1/2 max-w-lg">
             {/* TEMPORARILY SHOWING PROMPT PANEL FOR ALL USERS - FOR UI REVIEW */}
             <PromptPanel onSubmit={handleGenerate} disabled={generating || authLoading} loading={generating} />
             {/* TEMPORARILY DISABLED: Login notice */}
@@ -139,7 +166,9 @@ const Index = () => {
             )} */}
           </div>
         </section>
+
         <GeneratedPreview generation={generationResult} prompt={prompt} loading={generating} />
+        
         {/* TEMPORARILY SHOWING PAST GENERATIONS FOR ALL USERS - FOR UI REVIEW */}
         {user ? (
           <PastGenerations
@@ -154,6 +183,7 @@ const Index = () => {
         ) : (
           <GuestPastGenerationsNotice />
         )}
+        
         <HowItWorksPanel />
       </main>
     </div>

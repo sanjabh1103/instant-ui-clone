@@ -1,5 +1,5 @@
 
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Clock, Sparkles } from "lucide-react";
 import PastGenerationActions from "./PastGenerationActions";
 
 interface PastGen {
@@ -30,61 +30,88 @@ export default function PastGenerations({
   if (!generations || !generations.length) return null;
 
   return (
-    <section className="mt-10 mb-4 px-2">
-      <h3 className="font-bold text-md mb-3 text-gray-700">Past Generations</h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {generations.slice(0, 5).map((g, i) => (
+    <section className="mt-16 mb-8 px-4 w-full max-w-6xl mx-auto">
+      <div className="text-center mb-12">
+        <h3 className="text-3xl font-black text-gray-900 mb-4">Your Recent Creations</h3>
+        <p className="text-lg text-gray-600">Pick up where you left off or start fresh</p>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {generations.slice(0, 6).map((g, i) => (
           <div
             key={i}
-            className="rounded-lg bg-white border p-3 shadow group cursor-pointer flex flex-col relative hover:shadow-lg transition-all"
+            className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden group hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2"
           >
             {g.image_url && (
-              <img
-                src={g.image_url}
-                alt="sketch"
-                className="object-contain h-24 rounded mb-3 group-hover:scale-105 transition"
-              />
+              <div className="relative h-48 bg-gray-50 overflow-hidden">
+                <img
+                  src={g.image_url}
+                  alt="Project sketch"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+                <div className="absolute top-3 right-3">
+                  <div className="bg-green-100 text-green-800 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    Ready
+                  </div>
+                </div>
+              </div>
             )}
-            <div className="text-xs text-muted-foreground mb-1">{new Date(g.created_at).toLocaleString()}</div>
-            <div className="text-gray-900 text-sm font-medium line-clamp-2 mb-1">
-              {g.name ?? g.prompt}
-            </div>
-            <div className="text-[11px] text-gray-500 mb-1 line-clamp-1">{g.prompt}</div>
-            <div className={`text-xs mt-auto text-green-700`}>
-              Ready
-            </div>
-            <div className="flex items-center mt-2 gap-2">
-              {g.project_id && (
-                <>
-                  <a
-                    href={`/project/${g.project_id}`}
-                    className="text-indigo-600 underline text-xs hover:text-indigo-800 flex items-center gap-1"
-                    title="Open preview"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <ArrowUpRight className="w-4 h-4" />
-                    View
-                  </a>
-                  {onReload && (
-                    <button
-                      className="px-2 py-0.5 bg-gray-100 rounded hover:bg-indigo-50 text-xs text-indigo-700 border border-indigo-100 ml-2"
-                      title="Reload preview"
-                      onClick={() => g.project_id && onReload(g.project_id)}
-                    >
-                      Reload
-                    </button>
+            
+            <div className="p-6">
+              <div className="flex items-center gap-2 text-xs text-gray-500 mb-3">
+                <Clock className="w-4 h-4" />
+                {new Date(g.created_at).toLocaleDateString('en-US', { 
+                  month: 'short', 
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </div>
+              
+              <h4 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">
+                {g.name ?? g.prompt}
+              </h4>
+              
+              <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                {g.prompt}
+              </p>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {g.project_id && (
+                    <>
+                      <a
+                        href={`/project/${g.project_id}`}
+                        className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-lg font-semibold text-sm shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <ArrowUpRight className="w-4 h-4" />
+                        View
+                      </a>
+                      {onReload && (
+                        <button
+                          className="inline-flex items-center gap-2 bg-gray-100 hover:bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg font-semibold text-sm border border-gray-200 hover:border-indigo-200 transition-all"
+                          onClick={() => g.project_id && onReload(g.project_id)}
+                        >
+                          <Sparkles className="w-4 h-4" />
+                          Reload
+                        </button>
+                      )}
+                    </>
                   )}
-                  {/* Add Actions (Rename/Delete) */}
-                  {(onDelete || onRename) && (
-                    <PastGenerationActions
-                      onDelete={() => onDelete?.(g.project_id!)}
-                      onRename={(name) => onRename?.(g.project_id!, name)}
-                      initialName={g.name ?? g.prompt}
-                    />
-                  )}
-                </>
-              )}
+                </div>
+                
+                {/* Add Actions (Rename/Delete) */}
+                {(onDelete || onRename) && g.project_id && (
+                  <PastGenerationActions
+                    onDelete={() => onDelete?.(g.project_id!)}
+                    onRename={(name) => onRename?.(g.project_id!, name)}
+                    initialName={g.name ?? g.prompt}
+                  />
+                )}
+              </div>
             </div>
           </div>
         ))}
