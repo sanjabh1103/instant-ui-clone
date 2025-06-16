@@ -33,16 +33,15 @@ const Index = () => {
   // Error boundary state
   const [fatalError, setFatalError] = useState<string | null>(null);
 
-  // Session expiry & re-auth
-  useEffect(() => {
-    // watch for session expiry
-    if (!authLoading && !session) {
-      setFatalError("Session expired. Please log in again.");
-      setTimeout(() => {
-        window.location.href = "/auth";
-      }, 1250);
-    }
-  }, [session, authLoading]);
+  // TEMPORARILY DISABLED: Session expiry check for UI review
+  // useEffect(() => {
+  //   if (!authLoading && !session) {
+  //     setFatalError("Session expired. Please log in again.");
+  //     setTimeout(() => {
+  //       window.location.href = "/auth";
+  //     }, 1250);
+  //   }
+  // }, [session, authLoading]);
 
   // Enhanced API error boundary
   useEffect(() => {
@@ -129,18 +128,19 @@ const Index = () => {
             <SketchUploader onImageSelected={setImage} disabled={generating} />
           </div>
           <div className="w-full lg:w-1/2 max-w-[520px]">
-            {/* Hide login box. Only show PromptPanel if logged in */}
+            {/* TEMPORARILY SHOWING PROMPT PANEL FOR ALL USERS - FOR UI REVIEW */}
             <PromptPanel onSubmit={handleGenerate} disabled={generating || authLoading} loading={generating} />
-            {/* Info only - no login UI here */}
-            {!user && !authLoading && (
+            {/* TEMPORARILY DISABLED: Login notice */}
+            {/* {!user && !authLoading && (
               <div className="mt-4 bg-yellow-50 text-yellow-800 border border-yellow-200 rounded p-3 text-sm shadow-inner">
                 <b>To generate an app or view past generations, please</b>
                 <a href="/auth" className="ml-2 underline text-indigo-700 hover:text-indigo-900">log in</a>.
               </div>
-            )}
+            )} */}
           </div>
         </section>
         <GeneratedPreview generation={generationResult} prompt={prompt} loading={generating} />
+        {/* TEMPORARILY SHOWING PAST GENERATIONS FOR ALL USERS - FOR UI REVIEW */}
         {user ? (
           <PastGenerations
             generations={pastGenerations.map(g => ({
