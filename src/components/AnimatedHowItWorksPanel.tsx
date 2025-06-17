@@ -1,5 +1,5 @@
 
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import { Upload, MessageSquare, Sparkles, Rocket } from "lucide-react";
 
 const steps = [
@@ -30,7 +30,7 @@ const steps = [
 ];
 
 const AnimatedHowItWorksPanel = () => {
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -41,14 +41,14 @@ const AnimatedHowItWorksPanel = () => {
     }
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 30 },
     visible: {
       opacity: 1,
       y: 0,
       transition: {
         duration: 0.6,
-        ease: "easeOut"
+        ease: [0.25, 0.46, 0.45, 0.94] // easeOut cubic bezier
       }
     }
   };
@@ -96,7 +96,7 @@ const AnimatedHowItWorksPanel = () => {
               whileHover={{ 
                 y: -8,
                 scale: 1.02,
-                transition: { duration: 0.3, ease: "easeOut" }
+                transition: { duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }
               }}
               className="bg-white rounded-2xl p-6 md:p-8 shadow-xl border border-gray-100 relative z-10 hover:shadow-2xl transition-all duration-300"
             >
