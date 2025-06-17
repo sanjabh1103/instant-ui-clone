@@ -1,28 +1,31 @@
 
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import { Lock, ArrowRight } from "lucide-react";
 
 const AnimatedGuestNotice = () => {
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0, y: 30 },
     visible: {
       opacity: 1,
       y: 0,
       transition: {
         duration: 0.6,
-        ease: "easeOut",
+        ease: [0.25, 0.46, 0.45, 0.94], // easeOut cubic bezier
         staggerChildren: 0.1,
         delayChildren: 0.2
       }
     }
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.5, ease: "easeOut" }
+      transition: { 
+        duration: 0.5, 
+        ease: [0.25, 0.46, 0.45, 0.94] // easeOut cubic bezier
+      }
     }
   };
 
