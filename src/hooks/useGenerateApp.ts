@@ -69,13 +69,14 @@ export function useGenerateApp(
         prompt: userPrompt,
         project_id: result.projectId,
         image_url: publicUrl,
+        files: result.files,
       }).select();
 
       if (insertError) throw new Error(`Failed to save project: ${insertError.message}`);
 
       setGenerationResult(result);
 
-      if (newProject) {
+      if (newProject && newProject[0]) {
         setPastGenerations(prev => [newProject[0], ...prev].slice(0, 5));
       }
 
