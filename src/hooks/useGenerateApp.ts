@@ -76,7 +76,7 @@ export function useGenerateApp(
       setGenerationResult(result);
 
       if (newProject) {
-        setPastGenerations(prev => [newProject[0] as ProjectRow, ...prev].slice(0, 5));
+        setPastGenerations(prev => [newProject[0], ...prev].slice(0, 5));
       }
 
       toast({

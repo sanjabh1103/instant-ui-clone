@@ -3,20 +3,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
+import type { Database } from "@/integrations/supabase/types";
 
-export type ProjectRow = {
-  created_at: string;
-  description?: string;
-  id: string;
-  is_public: boolean;
-  name: string;
-  project_id: string;
-  updated_at: string;
-  user_id: string;
-  image_url?: string;
-  files?: string[];
-  prompt?: string;
-};
+export type ProjectRow = Database['public']['Tables']['projects']['Row'];
 
 export function usePastGenerationsFetcher(
   setGenerationResult: (v: { projectId: string; status: string; files: string[] } | null) => void,
@@ -48,16 +37,16 @@ export function usePastGenerationsFetcher(
         setGenerationResult({
           projectId: data[0].project_id,
           status: "ready",
-          files: (data[0] as any).files ?? [],
+          files: data[0].files ?? [],
         });
-        setPrompt((data[0] as any).prompt ?? '');
+        setPrompt(data[0].prompt ?? '');
       }
-      setPastGenerations((data || []) as ProjectRow[]);
+      setPastGenerations(data || []);
     };
     fetchProjects();
   }, [user, setGenerationResult, setPrompt]);
 
-  // NEW: Helper to manually refresh generations after delete/rename
+  // Helper to manually refresh generations after delete/rename
   const refreshPastGenerations = async () => {
     if (!user) {
       setPastGenerations([]);
@@ -79,10 +68,10 @@ export function usePastGenerationsFetcher(
       });
       return;
     }
-    setPastGenerations((data || []) as ProjectRow[]);
+    setPastGenerations(data || []);
   };
 
-  // NEW: Delete action
+  // Delete action
   const deleteProject = async (project_id: string) => {
     const { error } = await supabase
       .from("projects")
@@ -99,13 +88,13 @@ export function usePastGenerationsFetcher(
     toast({
       title: "Deleted!",
       description: "Project has been deleted.",
-      variant: "default", // fixed type to default since only "default" and "destructive" are allowed.
+      variant: "default",
     });
     await refreshPastGenerations();
     return true;
   };
 
-  // NEW: Rename action
+  // Rename action
   const renameProject = async (project_id: string, newName: string) => {
     const { error } = await supabase
       .from("projects")
@@ -129,6 +118,7 @@ export function usePastGenerationsFetcher(
 
   return {
     pastGenerations,
+    setPastGenerations,
     refreshPastGenerations,
     deleteProject,
     renameProject,

@@ -1347,6 +1347,48 @@ export type Database = {
         }
         Relationships: []
       }
+      projects: {
+        Row: {
+          created_at: string
+          description: string | null
+          files: string[] | null
+          id: string
+          image_url: string | null
+          is_public: boolean
+          name: string
+          project_id: string
+          prompt: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          files?: string[] | null
+          id?: string
+          image_url?: string | null
+          is_public?: boolean
+          name: string
+          project_id: string
+          prompt?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          files?: string[] | null
+          id?: string
+          image_url?: string | null
+          is_public?: boolean
+          name?: string
+          project_id?: string
+          prompt?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       question_responses: {
         Row: {
           ai_feedback: string | null
