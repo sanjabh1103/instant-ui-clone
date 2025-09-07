@@ -1,19 +1,21 @@
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 const GEMINI_API_URL =
   "https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent?key=" + GEMINI_API_KEY;
 
 const GEMINI_SYSTEM_PROMPT = `
-You are an expert AI web application developer and solution architect. 
+You are an expert AI web application developer and solution architect.
 Your job is, given a UI sketch (as an image) and a natural language description (the PROMPT), to determine the React code structure needed to implement the app.
 
 Your response should be in strict JSON format and ONLY include:
 - A "projectId" (random 8-character alphanumeric string)
 - A "status" (must be "ready" unless an error)
 - A "files" array: the list of file paths to be generated (e.g. "pages/index.tsx", "components/TodoList.tsx")
+- A "confidenceScore" (number between 0.0 and 1.0 indicating how confident you are in the interpretation)
 DO NOT offer explanations or surrounding text, only valid JSON. Keep the files array concise but include all essential files/components referenced in the sketch and prompt.
 
 Instructions you MUST follow:
@@ -22,6 +24,7 @@ Instructions you MUST follow:
 - Generally, core files will include at least a main page and component(s) needed for primary UI features.
 - Exclude test files, docs, and non-essential boilerplate—focus on MVP React code structure.
 - Do not "hallucinate" extra features not shown or described.
+- Provide a realistic confidence score based on sketch clarity and prompt specificity.
 `;
 
 function buildGeminiRequest({ image, prompt }: { image: string; prompt: string }) {
@@ -49,6 +52,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL') ?? '',
+  Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+);
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -56,6 +64,14 @@ serve(async (req) => {
 
   try {
     const { image, prompt } = await req.json();
+    const token = req.headers.get('authorization')?.split(' ')[1];
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     if (!image || !prompt) {
       return new Response(JSON.stringify({ error: 'Missing image or prompt' }), {
@@ -96,17 +112,28 @@ serve(async (req) => {
     if (
       !resultObj ||
       typeof resultObj !== "object" ||
-      !resultObj.projectId ||
-      !Array.isArray(resultObj.files)
+      !(resultObj as any).projectId ||
+      !Array.isArray((resultObj as any).files)
     ) {
       const projectId = Math.random().toString(36).slice(2, 10);
       resultObj = {
         projectId,
         status: "ready",
         files: ["pages/index.tsx"],
-      };
+      } as any;
     }
-    
+
+    // Save to database
+    await supabase.from("projects").insert({
+      user_id: user.id,
+      project_id: (resultObj as any).projectId,
+      name: prompt.substring(0, 50),
+      prompt: prompt,
+      files: (resultObj as any).files,
+      code_response: data.candidates[0].content.parts?.[0]?.text || "",
+      confidence_score: (resultObj as any).confidenceScore || 0.8,
+    });
+
     return new Response(JSON.stringify(resultObj), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

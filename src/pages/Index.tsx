@@ -203,88 +203,188 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+    <div className="min-h-screen w-full">
       <AnimatedHeader />
-      <main className="flex flex-col items-center py-8 md:py-12 px-4 w-full">
-        {/* Animated Hero Section */}
-        <motion.section 
+
+      {/* Full-width Hero Section with Background Image */}
+      <section className="relative min-h-screen w-full flex items-center justify-center overflow-hidden">
+        {/* Background Image */}
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: `url('https://images.unsplash.com/photo-1555949963-aa79dcee981c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80')`
+          }}
+        />
+
+        {/* Blurred Overlay */}
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+
+        {/* Glassmorphism Content Container */}
+        <motion.div
           initial="hidden"
           animate="visible"
           variants={heroVariants}
-          className="text-center mb-12 md:mb-16 max-w-4xl mx-auto"
+          className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center"
         >
-          <motion.h1 
-            variants={itemVariants}
-            className="text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 mb-6 tracking-tight leading-tight"
-          >
-            Turn Your
-            <motion.span 
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.3 }}
-              className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-transparent bg-clip-text"
-            > Sketches </motion.span>
-            Into Code
-          </motion.h1>
-          <motion.p 
-            variants={itemVariants}
-            className="text-lg md:text-xl lg:text-2xl text-gray-600 mb-8 leading-relaxed max-w-3xl mx-auto"
-          >
-            Upload a hand-drawn wireframe, describe your vision, and watch AI generate production-ready web applications in minutes.
-          </motion.p>
-          <motion.div 
-            variants={itemVariants}
-            className="flex flex-wrap justify-center gap-3 md:gap-4 text-sm text-gray-500"
-          >
-            {[
-              { color: "bg-green-500", text: "React & TypeScript" },
-              { color: "bg-blue-500", text: "Tailwind CSS" },
-              { color: "bg-purple-500", text: "AI-Powered" }
-            ].map((item, index) => (
-              <motion.div 
-                key={index}
-                whileHover={{ scale: 1.05, y: -2 }}
-                className="flex items-center gap-2 bg-white rounded-full px-4 py-2 shadow-sm border border-gray-100"
+          <div className="backdrop-blur-md bg-white/10 border border-white/20 rounded-3xl p-8 sm:p-12 lg:p-16 shadow-2xl">
+            <motion.h1
+              variants={itemVariants}
+              className="text-4xl sm:text-5xl lg:text-7xl xl:text-8xl font-serif font-light text-white mb-6 sm:mb-8 tracking-wide leading-tight"
+              style={{ fontFamily: 'Playfair Display, serif' }}
+            >
+              Turn Your
+              <motion.span
+                whileHover={{ scale: 1.02 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="block sm:inline bg-gradient-to-r from-blue-300 via-purple-300 to-pink-300 text-transparent bg-clip-text font-medium"
               >
-                <div className={`w-2 h-2 ${item.color} rounded-full`}></div>
-                {item.text}
-              </motion.div>
-            ))}
-          </motion.div>
-        </motion.section>
+                Sketches
+              </motion.span>
+              Into Code
+            </motion.h1>
 
-        {/* Main Creation Flow - Enhanced Mobile Layout */}
-        <motion.section 
+            <motion.p
+              variants={itemVariants}
+              className="text-lg sm:text-xl lg:text-2xl text-white/90 mb-8 sm:mb-12 leading-relaxed max-w-4xl mx-auto font-light"
+              style={{ fontFamily: 'Playfair Display, serif' }}
+            >
+              Upload a hand-drawn wireframe, describe your vision, and watch AI generate production-ready web applications in minutes.
+            </motion.p>
+
+            <motion.div
+              variants={itemVariants}
+              className="flex flex-wrap justify-center gap-3 sm:gap-4 mb-8 sm:mb-12"
+            >
+              {[
+                { color: "bg-emerald-400", text: "React & TypeScript" },
+                { color: "bg-blue-400", text: "Tailwind CSS" },
+                { color: "bg-purple-400", text: "AI-Powered" }
+              ].map((item, index) => (
+                <motion.div
+                  key={index}
+                  whileHover={{
+                    scale: 1.05,
+                    y: -3,
+                    boxShadow: "0 10px 25px rgba(255,255,255,0.2)"
+                  }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                  className="flex items-center gap-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-full px-4 sm:px-6 py-2 sm:py-3 text-white font-medium hover:bg-white/30 transition-all duration-300"
+                  style={{ fontFamily: 'Inter, sans-serif' }}
+                >
+                  <div className={`w-2 h-2 ${item.color} rounded-full animate-pulse`}></div>
+                  {item.text}
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </motion.div>
+
+        {/* Scroll Indicator */}
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.4, duration: 0.6 }}
-          className="w-full flex flex-col lg:flex-row gap-8 md:gap-12 items-start justify-center mb-12 md:mb-16 max-w-6xl mx-auto"
+          transition={{ delay: 2, duration: 1 }}
+          className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
         >
-          <div className="w-full lg:w-1/2 max-w-lg mx-auto lg:mx-0">
-            <AnimatedSketchUploader onImageSelected={setImage} disabled={generating} />
-          </div>
-          <div className="w-full lg:w-1/2 max-w-lg mx-auto lg:mx-0">
-            <AnimatedPromptPanel onSubmit={handleGenerate} disabled={generating || authLoading} loading={generating} />
+          <motion.div
+            animate={{ y: [0, 10, 0] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="w-6 h-10 border-2 border-white/60 rounded-full flex justify-center"
+          >
+            <motion.div
+              animate={{ y: [0, 12, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="w-1 h-3 bg-white/60 rounded-full mt-2"
+            />
+          </motion.div>
+        </motion.div>
+      </section>
+
+      <main className="flex flex-col items-center py-12 sm:py-16 lg:py-20 px-4 w-full bg-gradient-to-br from-slate-50 via-white to-slate-100">
+
+        {/* Main Creation Flow - Premium Mobile Layout */}
+        <motion.section
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="w-full max-w-7xl mx-auto mb-16 lg:mb-24"
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="order-2 lg:order-1"
+            >
+              <div className="backdrop-blur-sm bg-white/80 border border-white/20 rounded-2xl p-6 sm:p-8 shadow-xl hover:shadow-2xl transition-all duration-500">
+                <AnimatedSketchUploader onImageSelected={setImage} disabled={generating} />
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="order-1 lg:order-2"
+            >
+              <div className="backdrop-blur-sm bg-white/80 border border-white/20 rounded-2xl p-6 sm:p-8 shadow-xl hover:shadow-2xl transition-all duration-500">
+                <AnimatedPromptPanel onSubmit={handleGenerate} disabled={generating || authLoading} loading={generating} />
+              </div>
+            </motion.div>
           </div>
         </motion.section>
 
-        <GeneratedPreview generation={generationResult} prompt={prompt} loading={generating} />
-        
-        {/* Conditional rendering based on authentication with enhanced security */}
-        {user && session ? (
-          <PastGenerations
-            generations={pastGenerations.map(g => ({
-              ...g,
-              prompt: g.prompt ?? "",
-            }))}
-            onReload={handleReloadGeneration}
-            onDelete={handleDeleteGeneration}
-            onRename={handleRenameGeneration}
-          />
-        ) : (
-          <AnimatedGuestNotice />
-        )}
-        
-        <AnimatedHowItWorksPanel />
+        {/* Generated Preview with Enhanced Animations */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="w-full max-w-5xl mx-auto mb-16"
+        >
+          <GeneratedPreview generation={generationResult} prompt={prompt} loading={generating} />
+        </motion.div>
+
+        {/* Past Generations with Glassmorphism */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="w-full max-w-6xl mx-auto mb-16"
+        >
+          {user && session ? (
+            <div className="backdrop-blur-sm bg-white/60 border border-white/20 rounded-2xl p-6 sm:p-8 shadow-xl">
+              <PastGenerations
+                generations={pastGenerations.map(g => ({
+                  ...g,
+                  prompt: g.prompt ?? "",
+                }))}
+                onReload={handleReloadGeneration}
+                onDelete={handleDeleteGeneration}
+                onRename={handleRenameGeneration}
+              />
+            </div>
+          ) : (
+            <div className="backdrop-blur-sm bg-white/60 border border-white/20 rounded-2xl p-6 sm:p-8 shadow-xl">
+              <AnimatedGuestNotice />
+            </div>
+          )}
+        </motion.div>
+
+        {/* How It Works Panel with Enhanced Styling */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="w-full"
+        >
+          <AnimatedHowItWorksPanel />
+        </motion.div>
       </main>
     </div>
   );

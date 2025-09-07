@@ -1349,6 +1349,8 @@ export type Database = {
       }
       projects: {
         Row: {
+          code_response: string | null
+          confidence_score: number | null
           created_at: string
           description: string | null
           files: string[] | null
@@ -1362,6 +1364,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          code_response?: string | null
+          confidence_score?: number | null
           created_at?: string
           description?: string | null
           files?: string[] | null
@@ -1375,6 +1379,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          code_response?: string | null
+          confidence_score?: number | null
           created_at?: string
           description?: string | null
           files?: string[] | null
